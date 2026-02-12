@@ -1,0 +1,52 @@
+name: Cocos Creator Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Cocos 3.x standard
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Download Cocos Creator Editor
+        shell: powershell
+        run: |
+          # Example for Cocos Creator 3.8.7. Replace URL with your version.
+          $url = "https://download.cocos.com/CocosCreator/v3.8.7/CocosCreator-v3.8.7-win-080718.zip"
+          $dest = "CocosCreator.zip"
+          Invoke-WebRequest -Uri $url -OutFile $dest
+          Expand-Archive -Path $dest -DestinationPath ./CocosEditor
+
+      - name: Cocos CLI Build
+        shell: cmd
+        env:
+          # If your build requires login, use these (optional for some setups)
+          COCOS_USER: ${{ secrets.COCOS_USER }}
+          COCOS_PWD: ${{ secrets.COCOS_PWD }}
+        run: |
+          :: Path to the editor executable
+          set COCOS_EXE=.\CocosEditor\CocosCreator.exe
+
+          :: Build Command
+          :: --project: Project path
+          :: --build: configPath points to the exported JSON
+          %COCOS_EXE% --project . --build "configPath=./buildConfig_web.json"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-mobile-build
+          path: build/web-mobile/ # Matches the output path in your JSON

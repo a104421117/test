@@ -1,0 +1,5 @@
+﻿圖層名稱,類型,路徑,Cocos_X,Cocos_Y,寬度,高度,PS_X,PS_Y
+01-blue-Lastbackground,layer,,0,0,1280,585,0,0
+background-move,group,,0,-71,1280,442,0,143
+05-forward-scene,layer,background-move,0,-165,1280,254,0,331
+04-back-scene,layer,background-move,0,0,1280,300,0,143

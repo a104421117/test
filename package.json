@@ -1,0 +1,11 @@
+{
+  "name": "NewProject",
+  "uuid": "e8b44442-f510-41e6-8c09-5239c607490f",
+  "creator": {
+    "version": "3.8.7"
+  },
+  "devDependencies": {
+    "protobufjs": "^7.5.4",
+    "protobufjs-cli": "^2.0.0"
+  }
+}

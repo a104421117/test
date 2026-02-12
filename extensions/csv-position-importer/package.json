@@ -1,0 +1,25 @@
+{
+  "name": "csv-position-importer",
+  "version": "7.3.0",
+  "description": "從 CSV 匯入節點座標和圖片，支援更新節點和僅更新圖片模式",
+  "main": "./dist/main.js",
+  "author": "Claude",
+  "editor": ">=3.8.0",
+  "contributions": {
+    "menu": [
+      {
+        "path": "工具/CSV 座標匯入",
+        "label": "匯入 CSV 座標...",
+        "message": "open-panel"
+      }
+    ],
+    "messages": {
+      "open-panel": {
+        "methods": ["openPanel"]
+      },
+      "import-csv": {
+        "methods": ["importCSV"]
+      }
+    }
+  }
+}
