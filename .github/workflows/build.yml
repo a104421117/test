@@ -94,10 +94,10 @@ jobs:
           name: web-mobile-build
           path: build/web-mobile
 
-      - name: Deploy to VM via SFTP
+      - name: Deploy to FTP Server
         run: |
           sudo apt-get update && sudo apt-get install -y lftp
           lftp -u "${{ secrets.SFTP_USERNAME }},${{ secrets.SFTP_PASSWORD }}" \
                -p ${{ secrets.SFTP_PORT }} \
-               sftp://${{ secrets.SFTP_HOST }} \
+               ftp://${{ secrets.SFTP_HOST }} \
                -e "set ssl:verify-certificate no; mirror -R ./build/web-mobile/ ${{ secrets.SFTP_REMOTE_PATH }}; quit"
