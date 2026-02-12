@@ -1,4 +1,4 @@
-name: Cocos Creator Build
+name: Cocos Creator Build & Deploy
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ==================== Build Job ====================
   build-web:
     runs-on: windows-latest
 
@@ -16,37 +17,90 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Cocos 3.x standard
+          node-version: '18'
 
       - name: Install Dependencies
         run: npm install
 
+      - name: Cache Cocos Creator Editor
+        uses: actions/cache@v4
+        id: cocos-cache
+        with:
+          path: ./CocosEditor
+          key: cocos-creator-3.8.7
+
       - name: Download Cocos Creator Editor
-        shell: powershell
+        if: steps.cocos-cache.outputs.cache-hit != 'true'
         run: |
-          # Example for Cocos Creator 3.8.7. Replace URL with your version.
-          $url = "https://download.cocos.com/CocosCreator/v3.8.7/CocosCreator-v3.8.7-win-080718.zip"
-          $dest = "CocosCreator.zip"
-          Invoke-WebRequest -Uri $url -OutFile $dest
-          Expand-Archive -Path $dest -DestinationPath ./CocosEditor
+          curl -L -o CocosCreator.zip "https://download.cocos.com/CocosCreator/v3.8.7/CocosCreator-v3.8.7-win-080718.zip"
+          7z x CocosCreator.zip -oCocosEditor
+          del CocosCreator.zip
+          dir CocosEditor
 
       - name: Cocos CLI Build
-        shell: cmd
+        shell: powershell
+        timeout-minutes: 30
         env:
-          # If your build requires login, use these (optional for some setups)
           COCOS_USER: ${{ secrets.COCOS_USER }}
           COCOS_PWD: ${{ secrets.COCOS_PWD }}
         run: |
-          :: Path to the editor executable
-          set COCOS_EXE=.\CocosEditor\CocosCreator.exe
+          $process = Start-Process -FilePath ".\CocosEditor\CocosCreator.exe" -ArgumentList "--project", ".", "--build", "platform=web-mobile;debug=false", "--login", "$env:COCOS_USER", "$env:COCOS_PWD" -PassThru
+          $timeout = 600
+          $timer = 0
+          while (!$process.HasExited -and $timer -lt $timeout) {
+            Start-Sleep -Seconds 10
+            $timer += 10
+            Write-Host "Waiting for build... ($timer seconds)"
+            if (Test-Path "build/web-mobile/index.html") {
+              Write-Host "Build output detected, waiting for process to finish..."
+            }
+          }
+          if (!$process.HasExited) {
+            Write-Host "Process still running after $timeout seconds, stopping..."
+            $process.Kill()
+          }
+          Write-Host "Build process exited with code: $($process.ExitCode)"
+          Start-Sleep -Seconds 5
+          if (Test-Path "build/web-mobile/index.html") {
+            Write-Host "Build successful - index.html found"
+          } else {
+            Write-Host "Build may have failed - index.html not found"
+            exit 1
+          }
 
-          :: Build Command
-          :: --project: Project path
-          :: --build: configPath points to the exported JSON
-          %COCOS_EXE% --project . --build "configPath=./buildConfig_web.json"
+      - name: List Build Output
+        shell: powershell
+        run: |
+          Write-Host "Current directory: $(Get-Location)"
+          if (Test-Path "build") {
+            Write-Host "Build folder contents:"
+            Get-ChildItem "build" -Recurse
+          } else {
+            Write-Host "build folder not found"
+          }
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-mobile-build
-          path: build/web-mobile/ # Matches the output path in your JSON
+          path: build/web-mobile/
+
+  # ==================== Deploy Job ====================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-web
+
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-mobile-build
+          path: build/web-mobile
+
+      - name: Deploy to VM via SFTP
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -u "${{ secrets.SFTP_USERNAME }},${{ secrets.SFTP_PASSWORD }}" \
+               -p ${{ secrets.SFTP_PORT }} \
+               sftp://${{ secrets.SFTP_HOST }} \
+               -e "set ssl:verify-certificate no; mirror -R ./build/web-mobile/ ${{ secrets.SFTP_REMOTE_PATH }}; quit"

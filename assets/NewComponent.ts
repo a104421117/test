@@ -27,30 +27,8 @@ export class NewComponent extends Component {
                     break;
                 case "room.list":
                     const roomId = msg?.data?.rooms[0].roomId;
-                    this.sendOp("room.list", { roomId });
+                    this.sendOp("room.join", { roomId });
                     break;
-                // case "room.list":
-                //     this.sendOp("room.join", data);
-                //     break;
-                // // case "room.create":
-                // //     this.sendOp("room.join", data);
-                // //     break;
-                // case "room.join":
-                //     this.sendOp("room.join", data);
-                //     break;
-                // case "room.joined":
-                //     this.sendOp("game.init", data);
-                //     break;
-                // case "game.init":
-                //     this.sendOp("game.balance", data);
-                //     break;
-                // case "game.balance":
-                //     // this.sendOp("game.action", data);
-                //     break;
-                // case "crash.state":
-                //     const currentMultiplier = msg?.data?.currentMultiplier;
-                //     console.log(currentMultiplier);
-                //     break;
             }
         };
 
