@@ -40,11 +40,8 @@ jobs:
       - name: Cocos CLI Build
         shell: powershell
         timeout-minutes: 30
-        env:
-          COCOS_USER: ${{ secrets.COCOS_USER }}
-          COCOS_PWD: ${{ secrets.COCOS_PWD }}
         run: |
-          $process = Start-Process -FilePath ".\CocosEditor\CocosCreator.exe" -ArgumentList "--project", ".", "--build", "platform=web-mobile;debug=false", "--login", "$env:COCOS_USER", "$env:COCOS_PWD" -PassThru
+          $process = Start-Process -FilePath ".\CocosEditor\CocosCreator.exe" -ArgumentList "--project", ".", "--build", "platform=web-mobile;debug=false" -PassThru
           $timeout = 600
           $timer = 0
           while (!$process.HasExited -and $timer -lt $timeout) {
